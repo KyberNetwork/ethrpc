@@ -20,6 +20,8 @@ const (
 	MethodTryAggregate = "tryAggregate"
 
 	MethodGetCurrentBlockTimestamp = "getCurrentBlockTimestamp"
+
+	MethodTryBlockAndAggregate = "tryBlockAndAggregate"
 )
 
 var zeroHash common.Hash

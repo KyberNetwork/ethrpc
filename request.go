@@ -136,3 +136,7 @@ func (r *Request) GetCurrentBlockTimestamp() (uint64, error) {
 func (r *Request) GetStorageAt(account common.Address, key common.Hash, abi abi.Arguments) ([]interface{}, error) {
 	return r.client.getStorageAt(r.Context(), account, key, abi)
 }
+
+func (r *Request) TryBlockAndAggregate() (*Response, error) {
+	return r.Execute(MethodTryBlockAndAggregate)
+}

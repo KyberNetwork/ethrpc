@@ -22,3 +22,9 @@ type TryAggregateResultItem struct {
 }
 
 type TryAggregateResult []TryAggregateResultItem
+
+type TryBlockAndAggregateResult struct {
+	BlockNumber *big.Int
+	BlockHash   [32]byte
+	ReturnData  []TryAggregateResultItem
+}
