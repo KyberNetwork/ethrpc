@@ -1,6 +1,7 @@
 package ethrpc
 
 import (
+	"context"
 	"fmt"
 	"math/big"
 	"testing"
@@ -21,6 +22,13 @@ func (ts *RPCTestSuite) SetupTest() {
 	rpcClient.SetMulticallContract(common.HexToAddress("0x5ba1e12693dc8f9c48aad8770482f4739beed696"))
 
 	ts.client = rpcClient
+}
+
+func (ts *RPCTestSuite) TestGetBlockNumber() {
+	blockNumber, err := ts.client.BlockNumber(context.Background())
+
+	ts.Require().NoError(err)
+	ts.Require().NotEqual(0, blockNumber)
 }
 
 func (ts *RPCTestSuite) TestTryAggregate() {

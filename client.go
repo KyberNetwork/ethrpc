@@ -55,6 +55,10 @@ func (c *Client) EstimateGas(ctx context.Context, msg ethereum.CallMsg) (uint64,
 	return c.ethClient.EstimateGas(ctx, msg)
 }
 
+func (c *Client) BlockNumber(ctx context.Context) (uint64, error) {
+	return c.ethClient.BlockNumber(ctx)
+}
+
 func (c *Client) R() *Request {
 	r := &Request{
 		client: c,
