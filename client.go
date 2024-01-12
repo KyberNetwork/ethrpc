@@ -35,7 +35,7 @@ type (
 )
 
 type Client struct {
-	ethClient         *ethclient.Client
+	ethClient         IEthClient
 	multiCallContract common.Address
 	beforeRequest     []RequestMiddleware
 	afterResponse     []ResponseMiddleware
