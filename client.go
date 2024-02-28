@@ -59,6 +59,10 @@ func (c *Client) GetBlockNumber(ctx context.Context) (uint64, error) {
 	return c.ethClient.BlockNumber(ctx)
 }
 
+func (c *Client) BalanceAt(ctx context.Context, account common.Address, blockNumber *big.Int) (*big.Int, error) {
+	return c.ethClient.BalanceAt(ctx, account, blockNumber)
+}
+
 func (c *Client) R() *Request {
 	r := &Request{
 		client: c,
