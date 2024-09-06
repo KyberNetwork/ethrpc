@@ -10,6 +10,8 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 
 	"github.com/KyberNetwork/logger"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/ethclient/gethclient"
 )
 
 const (
@@ -92,6 +94,17 @@ func (c *Client) getStorageAt(ctx context.Context, account common.Address, key c
 	return res, nil
 }
 
+func (c *Client) CallContractWithOverrides(ctx context.Context, msg ethereum.CallMsg, blockNumber *big.Int, overrides *map[common.Address]gethclient.OverrideAccount) ([]byte, error) {
+	var hex hexutil.Bytes
+	err := c.ethClient.Client().CallContext(
+		ctx, &hex, "eth_call", toCallArg(msg),
+		toBlockNumArg(blockNumber), overrides,
+	)
+
+	return hex, err
+
+}
+
 func (c *Client) execute(req *Request) (*Response, error) {
 	var err error
 
@@ -106,7 +119,7 @@ func (c *Client) execute(req *Request) (*Response, error) {
 	if req.BlockHash != zeroHash {
 		resp, err = c.ethClient.CallContractAtHash(req.Context(), req.RawCallMsg, req.BlockHash)
 	} else {
-		resp, err = c.ethClient.CallContract(req.Context(), req.RawCallMsg, req.BlockNumber)
+		resp, err = c.CallContractWithOverrides(req.Context(), req.RawCallMsg, req.BlockNumber, req.Overrides)
 	}
 	if err != nil {
 		logger.Errorf("failed to call multicall, err: %v", err)
