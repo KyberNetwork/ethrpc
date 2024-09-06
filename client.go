@@ -105,6 +105,13 @@ func (c *Client) execute(req *Request) (*Response, error) {
 	}
 
 	var resp []byte
+
+	// we don't support block hash and overrides at the same time
+	if req.BlockHash != zeroHash && req.Overrides != nil {
+		logger.Errorf("block hash and overrides are not supported at the same time")
+		return nil, ErrWrongCallParam
+	}
+
 	if req.BlockHash != zeroHash {
 		resp, err = c.ethClient.CallContractAtHash(req.Context(), req.RawCallMsg, req.BlockHash)
 	} else if req.Overrides != nil {
