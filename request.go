@@ -93,6 +93,8 @@ func (r *Request) SetBlockNumber(blockNumber *big.Int) *Request {
 	return r
 }
 
+// SetOverrides method sets the state overrides of blockchain for the request
+// NOTE: Overrides only work with no blockhash set
 func (r *Request) SetOverrides(overrides map[common.Address]gethclient.OverrideAccount) *Request {
 	r.Overrides = overrides
 
