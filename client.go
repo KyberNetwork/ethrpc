@@ -115,7 +115,7 @@ func (c *Client) execute(req *Request) (*Response, error) {
 	if req.BlockHash != zeroHash {
 		resp, err = c.ethClient.CallContractAtHash(req.Context(), req.RawCallMsg, req.BlockHash)
 	} else if req.Overrides != nil {
-		resp, err = c.gethClient.CallContract(req.Context(), req.RawCallMsg, req.BlockNumber, req.Overrides)
+		resp, err = c.gethClient.CallContract(req.Context(), req.RawCallMsg, req.BlockNumber, &req.Overrides)
 	} else {
 		resp, err = c.ethClient.CallContract(req.Context(), req.RawCallMsg, req.BlockNumber)
 	}

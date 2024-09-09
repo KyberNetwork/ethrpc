@@ -50,7 +50,7 @@ type Request struct {
 	RawCallMsg     ethereum.CallMsg
 	BlockNumber    *big.Int
 	BlockHash      common.Hash
-	Overrides      *map[common.Address]gethclient.OverrideAccount
+	Overrides      map[common.Address]gethclient.OverrideAccount
 }
 
 // Context method returns the Context if it's already set in request
@@ -93,7 +93,7 @@ func (r *Request) SetBlockNumber(blockNumber *big.Int) *Request {
 	return r
 }
 
-func (r *Request) SetOverrides(overrides *map[common.Address]gethclient.OverrideAccount) *Request {
+func (r *Request) SetOverrides(overrides map[common.Address]gethclient.OverrideAccount) *Request {
 	r.Overrides = overrides
 
 	return r
