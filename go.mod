@@ -1,8 +1,6 @@
 module github.com/KyberNetwork/ethrpc
 
-go 1.22
-
-toolchain go1.22.3
+go 1.22.7
 
 require (
 	github.com/KyberNetwork/logger v0.0.0-20230407035901-da6d1ed0bb36
