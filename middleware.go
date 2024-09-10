@@ -169,7 +169,7 @@ func parseResponse(_ *Client, res *Response) (err error) {
 
 		err = multicallABI.UnpackIntoInterface(&result, res.Request.Method, res.RawResponse)
 		if err != nil || len(result) != len(res.Request.Calls) {
-			logger.Errorf("failed to unpack tryAggregate response, err: %v", err)
+			logger.Errorf("failed to unpack tryAggregate response, err: %v", err, res.RawResponse)
 			return err
 		}
 
