@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethclient/gethclient"
 )
 
 type Call struct {
@@ -49,6 +50,7 @@ type Request struct {
 	RawCallMsg     ethereum.CallMsg
 	BlockNumber    *big.Int
 	BlockHash      common.Hash
+	Overrides      map[common.Address]gethclient.OverrideAccount
 }
 
 // Context method returns the Context if it's already set in request
@@ -87,6 +89,14 @@ func (r *Request) SetRequireSuccess(requireSuccess bool) *Request {
 
 func (r *Request) SetBlockNumber(blockNumber *big.Int) *Request {
 	r.BlockNumber = blockNumber
+
+	return r
+}
+
+// SetOverrides method sets the state overrides of blockchain for the request
+// NOTE: Overrides only work with no blockhash set
+func (r *Request) SetOverrides(overrides map[common.Address]gethclient.OverrideAccount) *Request {
+	r.Overrides = overrides
 
 	return r
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 
 	"github.com/KyberNetwork/logger"
+	"github.com/ethereum/go-ethereum/ethclient/gethclient"
 )
 
 const (
@@ -36,6 +37,7 @@ type (
 
 type Client struct {
 	ethClient         *ethclient.Client
+	gethClient        *gethclient.Client
 	multiCallContract common.Address
 	beforeRequest     []RequestMiddleware
 	afterResponse     []ResponseMiddleware
@@ -103,8 +105,17 @@ func (c *Client) execute(req *Request) (*Response, error) {
 	}
 
 	var resp []byte
+
+	// we don't support block hash and overrides at the same time
+	if req.BlockHash != zeroHash && len(req.Overrides) > 0 {
+		logger.Errorf("block hash and overrides are not supported at the same time")
+		return nil, ErrWrongCallParam
+	}
+
 	if req.BlockHash != zeroHash {
 		resp, err = c.ethClient.CallContractAtHash(req.Context(), req.RawCallMsg, req.BlockHash)
+	} else if req.Overrides != nil {
+		resp, err = c.gethClient.CallContract(req.Context(), req.RawCallMsg, req.BlockNumber, &req.Overrides)
 	} else {
 		resp, err = c.ethClient.CallContract(req.Context(), req.RawCallMsg, req.BlockNumber)
 	}
@@ -130,7 +141,8 @@ func (c *Client) execute(req *Request) (*Response, error) {
 
 func createClient(ec *ethclient.Client) *Client {
 	c := &Client{
-		ethClient: ec,
+		ethClient:  ec,
+		gethClient: gethclient.New(ec.Client()),
 	}
 
 	// default before request middlewares
