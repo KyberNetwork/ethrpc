@@ -44,6 +44,20 @@ type Client struct {
 	overrides         map[common.Address]gethclient.OverrideAccount
 }
 
+// Clone returns a new client with the same configuration as the original client. Except the overrides.
+func (c *Client) Clone() *Client {
+	CloneClient := Client{
+		ethClient:         c.ethClient,
+		gethClient:        c.gethClient,
+		multiCallContract: c.multiCallContract,
+		beforeRequest:     c.beforeRequest,
+		afterResponse:     c.afterResponse,
+		overrides:         nil,
+	}
+
+	return &CloneClient
+}
+
 func (c *Client) SetMulticallContract(multiCallContract common.Address) *Client {
 	c.multiCallContract = multiCallContract
 
