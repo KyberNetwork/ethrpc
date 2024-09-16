@@ -41,10 +41,17 @@ type Client struct {
 	multiCallContract common.Address
 	beforeRequest     []RequestMiddleware
 	afterResponse     []ResponseMiddleware
+	overrides         map[common.Address]gethclient.OverrideAccount
 }
 
 func (c *Client) SetMulticallContract(multiCallContract common.Address) *Client {
 	c.multiCallContract = multiCallContract
+
+	return c
+}
+
+func (c *Client) SetOverrides(overrides map[common.Address]gethclient.OverrideAccount) *Client {
+	c.overrides = overrides
 
 	return c
 }
@@ -68,6 +75,10 @@ func (c *Client) BalanceAt(ctx context.Context, account common.Address, blockNum
 func (c *Client) R() *Request {
 	r := &Request{
 		client: c,
+	}
+
+	if c.overrides != nil {
+		r.SetOverrides(c.overrides)
 	}
 
 	return r
