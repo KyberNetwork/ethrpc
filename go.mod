@@ -1,10 +1,10 @@
 module github.com/KyberNetwork/ethrpc
 
-go 1.22.7
+go 1.22
 
 require (
 	github.com/KyberNetwork/logger v0.0.0-20230407035901-da6d1ed0bb36
-	github.com/ethereum/go-ethereum v1.14.8
+	github.com/ethereum/go-ethereum v1.13.15
 	github.com/stretchr/testify v1.9.0
 )
 
