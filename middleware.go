@@ -22,7 +22,7 @@ func parseRequestCallParam(c *Client, req *Request) error {
 		}
 
 		target := common.HexToAddress(call.Target)
-		msg := ethereum.CallMsg{To: &target, Data: callData}
+		msg := ethereum.CallMsg{From: req.From, To: &target, Data: callData}
 
 		req.RawCallMsg = msg
 
@@ -51,7 +51,7 @@ func parseRequestCallParam(c *Client, req *Request) error {
 			return err
 		}
 
-		msg := ethereum.CallMsg{To: &c.multiCallContract, Data: callData}
+		msg := ethereum.CallMsg{From: req.From, To: &c.multiCallContract, Data: callData}
 		req.RawCallMsg = msg
 
 		return nil
@@ -79,7 +79,7 @@ func parseRequestCallParam(c *Client, req *Request) error {
 			return err
 		}
 
-		msg := ethereum.CallMsg{To: &c.multiCallContract, Data: callData}
+		msg := ethereum.CallMsg{From: req.From, To: &c.multiCallContract, Data: callData}
 		req.RawCallMsg = msg
 
 		return nil
@@ -90,7 +90,7 @@ func parseRequestCallParam(c *Client, req *Request) error {
 			return err
 		}
 
-		msg := ethereum.CallMsg{To: &c.multiCallContract, Data: callData}
+		msg := ethereum.CallMsg{From: req.From, To: &c.multiCallContract, Data: callData}
 		req.RawCallMsg = msg
 
 		return nil
@@ -118,7 +118,7 @@ func parseRequestCallParam(c *Client, req *Request) error {
 			return err
 		}
 
-		msg := ethereum.CallMsg{To: &c.multiCallContract, Data: callData}
+		msg := ethereum.CallMsg{From: req.From, To: &c.multiCallContract, Data: callData}
 		req.RawCallMsg = msg
 
 		return nil
