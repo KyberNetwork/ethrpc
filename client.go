@@ -43,6 +43,10 @@ type Client struct {
 	afterResponse     []ResponseMiddleware
 }
 
+func (c *Client) GetETHClient() *ethclient.Client {
+	return c.ethClient
+}
+
 func (c *Client) SetMulticallContract(multiCallContract common.Address) *Client {
 	c.multiCallContract = multiCallContract
 
