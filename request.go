@@ -50,6 +50,7 @@ type Request struct {
 	RawCallMsg     ethereum.CallMsg
 	BlockNumber    *big.Int
 	BlockHash      common.Hash
+	From           common.Address
 	Overrides      map[common.Address]gethclient.OverrideAccount
 }
 
@@ -93,16 +94,22 @@ func (r *Request) SetBlockNumber(blockNumber *big.Int) *Request {
 	return r
 }
 
-// SetOverrides method sets the state overrides of blockchain for the request
-// NOTE: Overrides only work with no blockhash set
-func (r *Request) SetOverrides(overrides map[common.Address]gethclient.OverrideAccount) *Request {
-	r.Overrides = overrides
+func (r *Request) SetBlockHash(blockHash common.Hash) *Request {
+	r.BlockHash = blockHash
 
 	return r
 }
 
-func (r *Request) SetBlockHash(blockHash common.Hash) *Request {
-	r.BlockHash = blockHash
+func (r *Request) SetFrom(from common.Address) *Request {
+	r.From = from
+
+	return r
+}
+
+// SetOverrides method sets the state overrides of blockchain for the request
+// NOTE: Overrides only work with no blockhash set
+func (r *Request) SetOverrides(overrides map[common.Address]gethclient.OverrideAccount) *Request {
+	r.Overrides = overrides
 
 	return r
 }
