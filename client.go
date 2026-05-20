@@ -43,6 +43,7 @@ type Client struct {
 	from              common.Address
 	gas               uint64
 	gasPrice          *big.Int
+	preReqHook        RequestMiddleware
 }
 
 func (c *Client) GetETHClient() *ethclient.Client {
@@ -69,6 +70,12 @@ func (c *Client) SetGas(gas uint64) *Client {
 
 func (c *Client) SetGasPrice(gasPrice *big.Int) *Client {
 	c.gasPrice = gasPrice
+
+	return c
+}
+
+func (c *Client) SetPreReqHook(hook RequestMiddleware) *Client {
+	c.preReqHook = hook
 
 	return c
 }
@@ -125,6 +132,12 @@ func (c *Client) execute(req *Request) (*Response, error) {
 	// Apply Request middlewares
 	for _, f := range c.beforeRequest {
 		if err = f(c, req); err != nil {
+			return nil, err
+		}
+	}
+
+	if c.preReqHook != nil {
+		if err = c.preReqHook(c, req); err != nil {
 			return nil, err
 		}
 	}
