@@ -40,6 +40,9 @@ type Client struct {
 	multiCallContract common.Address
 	beforeRequest     []RequestMiddleware
 	afterResponse     []ResponseMiddleware
+	from              common.Address
+	gas               uint64
+	gasPrice          *big.Int
 }
 
 func (c *Client) GetETHClient() *ethclient.Client {
@@ -48,6 +51,24 @@ func (c *Client) GetETHClient() *ethclient.Client {
 
 func (c *Client) SetMulticallContract(multiCallContract common.Address) *Client {
 	c.multiCallContract = multiCallContract
+
+	return c
+}
+
+func (c *Client) SetFrom(from common.Address) *Client {
+	c.from = from
+
+	return c
+}
+
+func (c *Client) SetGas(gas uint64) *Client {
+	c.gas = gas
+
+	return c
+}
+
+func (c *Client) SetGasPrice(gasPrice *big.Int) *Client {
+	c.gasPrice = gasPrice
 
 	return c
 }
@@ -69,18 +90,19 @@ func (c *Client) BalanceAt(ctx context.Context, account common.Address, blockNum
 }
 
 func (c *Client) R() *Request {
-	r := &Request{
-		client: c,
+	return &Request{
+		client:   c,
+		From:     c.from,
+		Gas:      c.gas,
+		GasPrice: c.gasPrice,
 	}
-
-	return r
 }
 
 func (c *Client) NewRequest() *Request {
 	return c.R()
 }
 
-func (c *Client) getStorageAt(ctx context.Context, account common.Address, key common.Hash, abi abi.Arguments) ([]interface{}, error) {
+func (c *Client) getStorageAt(ctx context.Context, account common.Address, key common.Hash, abi abi.Arguments) ([]any, error) {
 	resp, err := c.ethClient.StorageAt(ctx, account, key, nil)
 	if err != nil {
 		logger.Errorf("failed to call StorageAt to %v at %v, err: %v", account, key, err)
