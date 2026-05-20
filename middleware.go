@@ -1,10 +1,9 @@
 package ethrpc
 
 import (
+	"github.com/KyberNetwork/logger"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
-
-	"github.com/KyberNetwork/logger"
 )
 
 func parseRequestCallParam(c *Client, req *Request) error {
@@ -22,7 +21,7 @@ func parseRequestCallParam(c *Client, req *Request) error {
 		}
 
 		target := common.HexToAddress(call.Target)
-		msg := ethereum.CallMsg{From: req.From, To: &target, Data: callData}
+		msg := ethereum.CallMsg{From: req.From, To: &target, Gas: req.Gas, GasPrice: req.GasPrice, Data: callData}
 
 		req.RawCallMsg = msg
 
@@ -51,7 +50,7 @@ func parseRequestCallParam(c *Client, req *Request) error {
 			return err
 		}
 
-		msg := ethereum.CallMsg{From: req.From, To: &c.multiCallContract, Data: callData}
+		msg := ethereum.CallMsg{From: req.From, To: &c.multiCallContract, Gas: req.Gas, GasPrice: req.GasPrice, Data: callData}
 		req.RawCallMsg = msg
 
 		return nil
@@ -79,7 +78,7 @@ func parseRequestCallParam(c *Client, req *Request) error {
 			return err
 		}
 
-		msg := ethereum.CallMsg{From: req.From, To: &c.multiCallContract, Data: callData}
+		msg := ethereum.CallMsg{From: req.From, To: &c.multiCallContract, Gas: req.Gas, GasPrice: req.GasPrice, Data: callData}
 		req.RawCallMsg = msg
 
 		return nil
@@ -90,7 +89,7 @@ func parseRequestCallParam(c *Client, req *Request) error {
 			return err
 		}
 
-		msg := ethereum.CallMsg{From: req.From, To: &c.multiCallContract, Data: callData}
+		msg := ethereum.CallMsg{From: req.From, To: &c.multiCallContract, Gas: req.Gas, GasPrice: req.GasPrice, Data: callData}
 		req.RawCallMsg = msg
 
 		return nil
@@ -118,7 +117,7 @@ func parseRequestCallParam(c *Client, req *Request) error {
 			return err
 		}
 
-		msg := ethereum.CallMsg{From: req.From, To: &c.multiCallContract, Data: callData}
+		msg := ethereum.CallMsg{From: req.From, To: &c.multiCallContract, Gas: req.Gas, GasPrice: req.GasPrice, Data: callData}
 		req.RawCallMsg = msg
 
 		return nil
