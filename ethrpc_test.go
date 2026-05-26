@@ -131,10 +131,10 @@ func (ts *RPCTestSuite) TestRetryOnError() {
 
 	futureBlock := latestBlock + 2
 
-	ts.T().Logf("latest block: %d, requesting block hash at: %d", latestBlock, futureBlock)
+	ts.T().Logf("latest block: %d, requesting block: %d", latestBlock, futureBlock)
 
 	start := time.Now()
-	err = retryClient.WithRetry(ctx, "get block hash", func() error {
+	err = retryClient.WithRetry(ctx, "get balance", func() error {
 		_, err := retryClient.BalanceAt(ctx, common.Address{}, new(big.Int).SetUint64(futureBlock))
 		if err != nil {
 			return err
