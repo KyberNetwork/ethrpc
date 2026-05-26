@@ -2,10 +2,14 @@ package ethrpc
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/big"
+	"strings"
 	"testing"
+	"time"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/suite"
 )
@@ -94,12 +98,55 @@ func (ts *RPCTestSuite) TestTryBlockAggregate() {
 	}
 
 	res, err := req.TryBlockAndAggregate()
+	ts.Require().NoError(err)
 
 	fmt.Printf("%+v\n", reserves)
 	fmt.Printf("Block Number: %+v\n", res.BlockNumber.Int64())
 
 	ts.Require().NoError(err)
-	//ts.Require().Len(res.Result, len(req.Calls))
+	ts.Require().Len(res.Result, len(req.Calls))
+}
+
+func (ts *RPCTestSuite) TestRetryOnError() {
+	retryCount := 0
+	retryClient := New("https://rpc.monad.xyz").
+		SetRetryCount(3).
+		SetRetryDelay(400 * time.Millisecond).
+		SetRetryCondition(func(err error) bool {
+			if errors.Is(err, ethereum.NotFound) ||
+				strings.Contains(strings.ToLower(err.Error()), "not found") ||
+				strings.Contains(strings.ToLower(err.Error()), "unknown block") {
+				retryCount++
+				return true
+			}
+
+			return false
+		})
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	latestBlock, err := retryClient.GetBlockNumber(ctx)
+	ts.Require().NoError(err)
+	ts.Require().NotZero(latestBlock)
+
+	futureBlock := latestBlock + 2
+
+	ts.T().Logf("latest block: %d, requesting block hash at: %d", latestBlock, futureBlock)
+
+	start := time.Now()
+	err = retryClient.WithRetry(ctx, "get block hash", func() error {
+		_, err := retryClient.BalanceAt(ctx, common.Address{}, new(big.Int).SetUint64(futureBlock))
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	elapsed := time.Since(start)
+
+	ts.Require().NoError(err)
+	ts.Require().LessOrEqual(retryCount, 3)
+
+	ts.T().Logf("elapsed=%v, retryCount=%d", elapsed, retryCount)
 }
 
 func TestRPCTestSuite(t *testing.T) {
