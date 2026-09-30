@@ -16,11 +16,11 @@ type Call struct {
 	UnpackABI []abi.ABI
 	Target    string
 	Method    string
-	Params    []interface{}
-	Output    []interface{}
+	Params    []any
+	Output    []any
 }
 
-func (c *Call) SetOutput(output []interface{}) *Call {
+func (c *Call) SetOutput(output []any) *Call {
 	c.Output = output
 
 	return c
@@ -51,6 +51,8 @@ type Request struct {
 	BlockNumber    *big.Int
 	BlockHash      common.Hash
 	From           common.Address
+	Gas            uint64
+	GasPrice       *big.Int
 	Overrides      map[common.Address]gethclient.OverrideAccount
 }
 
@@ -74,7 +76,7 @@ func (r *Request) SetContext(ctx context.Context) *Request {
 
 // AddCall adds a call to the request
 // it will autofill the UnpackABI in case it's not set
-func (r *Request) AddCall(c *Call, output []interface{}) *Request {
+func (r *Request) AddCall(c *Call, output []any) *Request {
 	c.autofillUnpackABI()
 	c.SetOutput(output)
 	r.Calls = append(r.Calls, c)
@@ -102,6 +104,18 @@ func (r *Request) SetBlockHash(blockHash common.Hash) *Request {
 
 func (r *Request) SetFrom(from common.Address) *Request {
 	r.From = from
+
+	return r
+}
+
+func (r *Request) SetGas(gas uint64) *Request {
+	r.Gas = gas
+
+	return r
+}
+
+func (r *Request) SetGasPrice(gasPrice *big.Int) *Request {
+	r.GasPrice = gasPrice
 
 	return r
 }
@@ -150,7 +164,7 @@ func (r *Request) GetCurrentBlockTimestamp() (uint64, error) {
 	return blockTimestamp, nil
 }
 
-func (r *Request) GetStorageAt(account common.Address, key common.Hash, abi abi.Arguments) ([]interface{}, error) {
+func (r *Request) GetStorageAt(account common.Address, key common.Hash, abi abi.Arguments) ([]any, error) {
 	return r.client.getStorageAt(r.Context(), account, key, abi)
 }
 
