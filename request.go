@@ -164,8 +164,10 @@ func (r *Request) GetCurrentBlockTimestamp() (uint64, error) {
 	return blockTimestamp, nil
 }
 
-func (r *Request) GetStorageAt(account common.Address, key common.Hash, abi abi.Arguments) ([]any, error) {
-	return r.client.getStorageAt(r.Context(), account, key, abi)
+// GetStorageAt reads the storage slot key of account and decodes it per args into v,
+// which may hold uint256.Int or range-safe native ints (see package ethrpc/abi).
+func (r *Request) GetStorageAt(account common.Address, key common.Hash, args abi.Arguments, v any) error {
+	return r.client.getStorageAt(r.Context(), account, key, args, v)
 }
 
 func (r *Request) TryBlockAndAggregate() (*Response, error) {

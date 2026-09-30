@@ -7,10 +7,12 @@ import (
 
 	"github.com/KyberNetwork/logger"
 	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/accounts/abi"
+	gethabi "github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/ethclient/gethclient"
+
+	"github.com/KyberNetwork/ethrpc/abi"
 )
 
 const (
@@ -134,21 +136,20 @@ func (c *Client) NewRequest() *Request {
 	return c.R()
 }
 
-func (c *Client) getStorageAt(ctx context.Context, account common.Address, key common.Hash, abi abi.Arguments) ([]any, error) {
+func (c *Client) getStorageAt(ctx context.Context, account common.Address, key common.Hash, args gethabi.Arguments, v any) error {
 	resp, err := c.ethClient.StorageAt(ctx, account, key, nil)
 	if err != nil {
 		logger.Errorf("failed to call StorageAt to %v at %v, err: %v", account, key, err)
-		return nil, err
+		return err
 	}
 	logger.Debugf("raw response %v", common.Bytes2Hex(resp))
 
-	res, err := abi.Unpack(resp)
-	if err != nil {
+	if err = abi.UnpackArgs(args, v, resp); err != nil {
 		logger.Errorf("failed to unpack StorageAt to %v at %v, err: %v", account, key, err)
-		return nil, err
+		return err
 	}
 
-	return res, nil
+	return nil
 }
 
 func (c *Client) execute(req *Request) (*Response, error) {

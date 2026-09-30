@@ -4,6 +4,8 @@ import (
 	"github.com/KyberNetwork/logger"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
+
+	"github.com/KyberNetwork/ethrpc/abi"
 )
 
 func parseRequestCallParam(c *Client, req *Request) error {
@@ -14,7 +16,7 @@ func parseRequestCallParam(c *Client, req *Request) error {
 		}
 
 		call := req.Calls[0]
-		callData, err := call.ABI.Pack(call.Method, call.Params...)
+		callData, err := abi.Pack(&call.ABI, call.Method, call.Params...)
 		if err != nil {
 			logger.Errorf("failed to pack api, err: %v", err)
 			return err
@@ -30,7 +32,7 @@ func parseRequestCallParam(c *Client, req *Request) error {
 		var multiCallParams []MultiCallParam
 
 		for _, c := range req.Calls {
-			callData, err := c.ABI.Pack(c.Method, c.Params...)
+			callData, err := abi.Pack(&c.ABI, c.Method, c.Params...)
 			if err != nil {
 				logger.Errorf("failed to build call data for target=%s method=%s, err: %v", c.Target, c.Method, err)
 				return err
@@ -44,7 +46,7 @@ func parseRequestCallParam(c *Client, req *Request) error {
 			)
 		}
 
-		callData, err := multicallABI.Pack(MethodAggregate, multiCallParams)
+		callData, err := abi.Pack(&multicallABI, MethodAggregate, multiCallParams)
 		if err != nil {
 			logger.Errorf("failed to build multi call data, err: %v", err)
 			return err
@@ -58,7 +60,7 @@ func parseRequestCallParam(c *Client, req *Request) error {
 		var multiCallParams []MultiCallParam
 
 		for _, call := range req.Calls {
-			callData, err := call.ABI.Pack(call.Method, call.Params...)
+			callData, err := abi.Pack(&call.ABI, call.Method, call.Params...)
 			if err != nil {
 				logger.Errorf("failed to build call data for target=%s method=%s, err: %v", call.Target, call.Method, err)
 				return err
@@ -72,7 +74,7 @@ func parseRequestCallParam(c *Client, req *Request) error {
 			)
 		}
 
-		callData, err := multicallABI.Pack(MethodTryAggregate, req.RequireSuccess, multiCallParams)
+		callData, err := abi.Pack(&multicallABI, MethodTryAggregate, req.RequireSuccess, multiCallParams)
 		if err != nil {
 			logger.Errorf("failed to build multi call data, err: %v", err)
 			return err
@@ -83,7 +85,7 @@ func parseRequestCallParam(c *Client, req *Request) error {
 
 		return nil
 	case MethodGetCurrentBlockTimestamp:
-		callData, err := multicallABI.Pack(MethodGetCurrentBlockTimestamp)
+		callData, err := abi.Pack(&multicallABI, MethodGetCurrentBlockTimestamp)
 		if err != nil {
 			logger.Errorf("failed to build call data, err: %v", err)
 			return err
@@ -97,7 +99,7 @@ func parseRequestCallParam(c *Client, req *Request) error {
 		var multiCallParams []MultiCallParam
 
 		for _, call := range req.Calls {
-			callData, err := call.ABI.Pack(call.Method, call.Params...)
+			callData, err := abi.Pack(&call.ABI, call.Method, call.Params...)
 			if err != nil {
 				logger.Errorf("failed to build call data for target=%s method=%s, err: %v", call.Target, call.Method, err)
 				return err
@@ -111,7 +113,7 @@ func parseRequestCallParam(c *Client, req *Request) error {
 			)
 		}
 
-		callData, err := multicallABI.Pack(MethodTryBlockAndAggregate, req.RequireSuccess, multiCallParams)
+		callData, err := abi.Pack(&multicallABI, MethodTryBlockAndAggregate, req.RequireSuccess, multiCallParams)
 		if err != nil {
 			logger.Errorf("failed to build multi call data, err: %v", err)
 			return err
@@ -135,7 +137,7 @@ func parseResponse(_ *Client, res *Response) (err error) {
 
 		call := res.Request.Calls[0]
 
-		if err = call.ABI.UnpackIntoInterface(call.Output[0], call.Method, res.RawResponse); err != nil {
+		if err = abi.UnpackIntoInterface(&call.ABI, call.Output[0], call.Method, res.RawResponse); err != nil {
 			logger.Errorf("failed to unpack call %s, err: %v", call.Method, err)
 			return err
 		}
@@ -144,7 +146,7 @@ func parseResponse(_ *Client, res *Response) (err error) {
 	case MethodAggregate:
 		var result AggregateResult
 
-		err = multicallABI.UnpackIntoInterface(&result, res.Request.Method, res.RawResponse)
+		err = abi.UnpackIntoInterface(&multicallABI, &result, res.Request.Method, res.RawResponse)
 		if err != nil || len(result.ReturnData) != len(res.Request.Calls) {
 			logger.Errorf("failed to unpack aggregate response, err: %v", err)
 			return err
@@ -154,7 +156,7 @@ func parseResponse(_ *Client, res *Response) (err error) {
 			// result will always be true if it can reach this far
 			res.Result = append(res.Result, true)
 
-			if err = c.ABI.UnpackIntoInterface(c.Output[0], c.Method, result.ReturnData[i]); err != nil {
+			if err = abi.UnpackIntoInterface(&c.ABI, c.Output[0], c.Method, result.ReturnData[i]); err != nil {
 				logger.Errorf("failed to unpack target=%s method=%s, err: %v", c.Target, c.Method, err)
 
 				return NewUnPackMulticallError(err)
@@ -166,7 +168,7 @@ func parseResponse(_ *Client, res *Response) (err error) {
 	case MethodTryAggregate:
 		var result TryAggregateResult
 
-		err = multicallABI.UnpackIntoInterface(&result, res.Request.Method, res.RawResponse)
+		err = abi.UnpackIntoInterface(&multicallABI, &result, res.Request.Method, res.RawResponse)
 		if err != nil || len(result) != len(res.Request.Calls) {
 			logger.Errorf("failed to unpack tryAggregate response, err: %v", err)
 			return err
@@ -176,8 +178,8 @@ func parseResponse(_ *Client, res *Response) (err error) {
 			res.Result = append(res.Result, result[i].Success)
 
 			if result[i].Success {
-				for j, unpackABI := range c.UnpackABI {
-					if err = unpackABI.UnpackIntoInterface(c.Output[j], c.Method, result[i].ReturnData); err == nil {
+				for j := range c.UnpackABI {
+					if err = abi.UnpackIntoInterface(&c.UnpackABI[j], c.Output[j], c.Method, result[i].ReturnData); err == nil {
 						break
 					}
 
@@ -200,7 +202,7 @@ func parseResponse(_ *Client, res *Response) (err error) {
 	case MethodTryBlockAndAggregate:
 		var result TryBlockAndAggregateResult
 
-		err = multicallABI.UnpackIntoInterface(&result, res.Request.Method, res.RawResponse)
+		err = abi.UnpackIntoInterface(&multicallABI, &result, res.Request.Method, res.RawResponse)
 		if err != nil || len(result.ReturnData) != len(res.Request.Calls) {
 			logger.Errorf("failed to unpack tryAggregate response, err: %v", err)
 			return err
@@ -210,8 +212,8 @@ func parseResponse(_ *Client, res *Response) (err error) {
 			res.Result = append(res.Result, result.ReturnData[i].Success)
 
 			if result.ReturnData[i].Success {
-				for j, unpackABI := range c.UnpackABI {
-					if err = unpackABI.UnpackIntoInterface(c.Output[j], c.Method, result.ReturnData[i].ReturnData); err == nil {
+				for j := range c.UnpackABI {
+					if err = abi.UnpackIntoInterface(&c.UnpackABI[j], c.Output[j], c.Method, result.ReturnData[i].ReturnData); err == nil {
 						break
 					}
 
