@@ -3,6 +3,7 @@ package ethrpc
 import (
 	"context"
 	"math/big"
+	"time"
 
 	"github.com/KyberNetwork/logger"
 	"github.com/ethereum/go-ethereum"
@@ -44,6 +45,9 @@ type Client struct {
 	gas               uint64
 	gasPrice          *big.Int
 	preReqHook        RequestMiddleware
+	retryCount        int
+	retryDelay        time.Duration
+	retryConditionFn  func(error) bool
 }
 
 func (c *Client) GetETHClient() *ethclient.Client {
@@ -52,6 +56,27 @@ func (c *Client) GetETHClient() *ethclient.Client {
 
 func (c *Client) SetMulticallContract(multiCallContract common.Address) *Client {
 	c.multiCallContract = multiCallContract
+
+	return c
+}
+
+func (c *Client) SetRetryCount(count int) *Client {
+	if count < 0 {
+		count = 0
+	}
+	c.retryCount = count
+
+	return c
+}
+
+func (c *Client) SetRetryDelay(delay time.Duration) *Client {
+	c.retryDelay = delay
+
+	return c
+}
+
+func (c *Client) SetRetryCondition(fn func(error) bool) *Client {
+	c.retryConditionFn = fn
 
 	return c
 }
@@ -142,21 +167,18 @@ func (c *Client) execute(req *Request) (*Response, error) {
 		}
 	}
 
-	var resp []byte
-
 	// we don't support block hash and overrides at the same time
 	if req.BlockHash != zeroHash && len(req.Overrides) > 0 {
 		logger.Errorf("block hash and overrides are not supported at the same time")
 		return nil, ErrWrongCallParam
 	}
 
-	if req.BlockHash != zeroHash {
-		resp, err = c.ethClient.CallContractAtHash(req.Context(), req.RawCallMsg, req.BlockHash)
-	} else if req.Overrides != nil {
-		resp, err = c.gethClient.CallContract(req.Context(), req.RawCallMsg, req.BlockNumber, &req.Overrides)
-	} else {
-		resp, err = c.ethClient.CallContract(req.Context(), req.RawCallMsg, req.BlockNumber)
-	}
+	var resp []byte
+	err = c.WithRetry(req.Context(), "call multicall", func() error {
+		resp, err = c.callContract(req)
+
+		return err
+	})
 	if err != nil {
 		logger.Errorf("failed to call multicall, err: %v", err)
 		return nil, err
@@ -175,6 +197,66 @@ func (c *Client) execute(req *Request) (*Response, error) {
 	}
 
 	return response, err
+}
+
+func (c *Client) WithRetry(ctx context.Context, operation string, fn func() error) error {
+	attempts := 1
+	if c.retryCount > 0 {
+		attempts += c.retryCount
+	}
+
+	for attempt := range attempts {
+		err := fn()
+		if err == nil {
+			return nil
+		}
+
+		if attempt < attempts-1 && c.retryConditionFn != nil && c.retryConditionFn(err) {
+			logger.Warnf("failed to %s (attempt %d/%d), retrying, err: %v", operation, attempt+1, attempts, err)
+
+			if err := sleepWithContext(ctx, c.retryDelay<<attempt); err != nil {
+				return err
+			}
+
+			continue
+		}
+
+		return err
+	}
+
+	return nil
+}
+
+func (c *Client) callContract(req *Request) ([]byte, error) {
+	if req.BlockHash != zeroHash {
+		return c.ethClient.CallContractAtHash(req.Context(), req.RawCallMsg, req.BlockHash)
+	}
+
+	if req.Overrides != nil {
+		return c.gethClient.CallContract(req.Context(), req.RawCallMsg, req.BlockNumber, &req.Overrides)
+	}
+
+	return c.ethClient.CallContract(req.Context(), req.RawCallMsg, req.BlockNumber)
+}
+
+func sleepWithContext(ctx context.Context, d time.Duration) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
+	if d <= 0 {
+		return nil
+	}
+
+	timer := time.NewTimer(d)
+	defer timer.Stop()
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-timer.C:
+		return nil
+	}
 }
 
 func createClient(ec *ethclient.Client) *Client {
